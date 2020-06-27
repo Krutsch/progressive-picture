@@ -1,0 +1,29 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script defer type="module" src="dist/progressive-image.js"></script>
+    <style>
+      p {
+        height: 500vh;
+        font-size: 5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <p>LARGE CONTENT TO DEMONSTRATE LAZY LOADING ... PLEASE SCROLL</p>
+    <picture>
+      <source srcset="eu.preview.webp" data-src="eu.webp" type="image/webp" />
+      <source srcset="eu.preview.jpg" data-src="eu.jpg" type="image/jpg" />
+      <img
+        src="eu.preview.jpg"
+        data-src="eu.jpg"
+        loading="lazy"
+        width="500"
+        height="750"
+        data-alt="Logo"
+      />
+    </picture>
+  </body>
+</html>

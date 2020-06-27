@@ -1,0 +1,36 @@
+{
+  "name": "progressive-picture",
+  "version": "1.0.0",
+  "description": "Native Lazy Loaded Picture Element with Progressive Image Change",
+  "main": "dist/progressive-picture.js",
+  "scripts": {
+    "start": "tsc && esbuild --minify src/progressive-image.ts --outfile=dist/progressive-image.js"
+  },
+  "keywords": [
+    "image",
+    "picture",
+    "dom",
+    "lazyload",
+    "element",
+    "intersectionobserver",
+    "mutationobserver",
+    "picture",
+    "progressive",
+    "progressive image"
+  ],
+  "author": {
+    "name": "Fabian Krutsch",
+    "email": "f.krutsch@gmx.de",
+    "url": "https://krutsch.netlify.com/"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.5.13",
+    "typescript": "^3.9.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Krutsch/progressive-picture.git"
+  },
+  "bugs": "https://github.com/Krutsch/progressive-picture"
+}
