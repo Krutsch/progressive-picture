@@ -1,6 +1,6 @@
-# Progressive Pictures
+# Progressive Picture
 
-> This 642 bytes(compressed) library enhances Picture Elements with Progressive Image Loading and thus improves the Intial time of Images being displayed.
+> This 642 bytes(compressed) library enhances Picture Elements with Progressive Image Loading and thus improves the inital time of images being displayed.
 
 ## Install via NPM
 
@@ -35,9 +35,9 @@ https://lazy-load-picture.netlify.app/progressive.html
 
 ## Usage
 
-The `srcset`s of `<source>` and the `src` of `<img>` has to be filled with the URI for the low-quality Image. The data-src holds the high-quality Image and will be replaced once it has been loaded.  
-Also, there is a data-alt Attribute that can be applied as alt, once the Image was replaced. This fixes the inelegance of displaying text before an Image appears.
+The `srcset` of `<source>` and the `src` of `<img>` has to be filled with the URI for the low-quality image. The data-src holds the high-quality image and will be replaced once it has been loaded.  
+Also, there is a data-alt Attribute that can be applied as alt, once the Image was replaced. This fixes the inelegance of displaying text before an image appears.
 
 ### Further
 
-As shown in the Example, this library works great in combination with native lazy loading. Tip: add width and height to fix layout shifts.
+As shown in the example, this library works great in combination with native lazy loading. Tip: add width and height to fix layout shifts.
