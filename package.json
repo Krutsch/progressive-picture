@@ -28,7 +28,6 @@
     "esbuild": "0.5.13",
     "typescript": "3.9.5"
   },
-  "publishConfig": { "registry": "https://npm.pkg.github.com/" },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Krutsch/progressive-picture.git"
