@@ -19,7 +19,7 @@ const observer = new IntersectionObserver(
         preload(sources, "srcset", img, false).then((preloadedSource) => {
           if (preloadedSource) {
             progessiveLoaded.add(entry.target as HTMLPictureElement);
-            return; // source element is being used -> no need to preload Image in <img>
+            return; // source element is being used -> no need to preload <img>
           }
 
           preload([img], "src", img, true).then(
@@ -72,7 +72,7 @@ async function preload(
     const current = original.currentSrc.split("/").slice(-1)[0];
     const sourceSrc = img.getAttribute(source)?.split("/").slice(-1)[0];
 
-    // preload when data-src for img and match-media for source
+    // preload when data-src for img exists and when currentSrc matches the element
     if (img.dataset.src && current === sourceSrc) {
       preload.src = img.dataset.src;
       original.removeAttribute("data-src");
