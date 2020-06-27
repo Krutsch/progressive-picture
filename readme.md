@@ -30,6 +30,8 @@ $ npm install progressive-picture
   />
 </picture>
 ```
+### Demo
+https://lazy-load-picture.netlify.app/progressive.html
 
 ## Usage
 
