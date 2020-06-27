@@ -1,6 +1,6 @@
 {
   "name": "progressive-picture",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Native Lazy Loaded Picture Element with Progressive Image Change",
   "main": "dist/progressive-picture.js",
   "scripts": {
