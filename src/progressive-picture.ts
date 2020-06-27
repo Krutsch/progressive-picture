@@ -74,17 +74,22 @@ async function preload(
 
     // preload when data-src for img and match-media for source
     if (img.dataset.src && current === sourceSrc) {
-      preload.src = img.dataset.src;
-      original.removeAttribute("data-src");
-      elements.forEach((elem: HTMLSourceElement | HTMLImageElement) =>
-        elem.removeAttribute("data-src")
-      );
+      if (img.dataset.src.includes(", ")) {
+        img.setAttribute(source, img.dataset.src);
+      } else {
+        preload.src = img.dataset.src;
+        await {
+          then: (resolve: (_: HTMLImageElement) => Promise<HTMLImageElement>) =>
+            (preload.onload = () => resolve(preload)),
+        };
+        img.setAttribute(source, preload.src);
+      }
 
-      await {
-        then: (resolve: (_: HTMLImageElement) => Promise<HTMLImageElement>) =>
-          (preload.onload = () => resolve(preload)),
-      };
-      img.setAttribute(source, preload.src);
+      original.removeAttribute("data-src");
+      elements.forEach((elem: HTMLSourceElement | HTMLImageElement) => {
+        elem.setAttribute(source, elem.dataset.src!);
+        elem.removeAttribute("data-src");
+      });
 
       if (alt && img.dataset.alt) {
         img.setAttribute("alt", img.dataset.alt);
