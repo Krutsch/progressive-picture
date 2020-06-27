@@ -1,6 +1,6 @@
 # Progressive Pictures
 
-> This library enhances Picture Elements with Progressive Image Loading and thus improves the Intial time of Images being displayed.
+> This 642 bytes(compressed) library enhances Picture Elements with Progressive Image Loading and thus improves the Intial time of Images being displayed.
 
 ## Install via NPM
 
