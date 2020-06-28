@@ -1,7 +1,7 @@
 const css = document.createElement("style");
 css.type = "text/css";
 css.innerText =
-  "picture { display: inline-block; } picture > img { filter: blur(0px); transition: all 0.7s ease-in; } picture > img[data-src] { filter: blur(2px); }";
+  "picture { display: inline-block; } picture > img { filter: blur(0px); transition: filter 0.7s ease-in; } picture > img[data-src] { filter: blur(2px); }";
 document.head.appendChild(css);
 
 const progessiveLoaded = new WeakSet<HTMLPictureElement>();
