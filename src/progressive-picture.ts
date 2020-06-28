@@ -1,7 +1,7 @@
 const css = document.createElement("style");
 css.type = "text/css";
 css.innerText =
-  "picture { display: inline-block; } picture > img { filter: blur(0px); transition: filter 0.7s ease-in; } picture > img[data-src] { filter: blur(2px); }";
+  "picture { display: block; } picture > img { display: block; max-width: 100%; height: auto; filter: blur(0px); transition: filter 0.7s ease-in; } picture > img[data-src] { filter: blur(3px); } picture > img.img-progressive { width: auto; }";
 document.head.appendChild(css);
 
 const progessiveLoaded = new WeakSet<HTMLPictureElement>();
@@ -85,6 +85,7 @@ async function preload(
         img.setAttribute(source, preload.src);
       }
 
+      original.classList.add("img-progressive");
       original.removeAttribute("data-src");
       elements.forEach((elem: HTMLSourceElement | HTMLImageElement) => {
         elem.setAttribute(source, elem.dataset.src!);

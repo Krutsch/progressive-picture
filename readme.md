@@ -1,6 +1,6 @@
 # Progressive Picture
 
-> This 686 bytes(compressed) library enhances Picture Elements with Progressive Image Loading and thus improves the inital time of images being displayed.
+> This 727 bytes(compressed) library enhances Picture Elements with Progressive Image Loading and thus improves the initial time of images being displayed.
 
 ## Install via NPM
 
@@ -31,7 +31,9 @@ $ npm install progressive-picture
   />
 </picture>
 ```
+
 ### Demo
+
 https://lazy-load-picture.netlify.app/progressive.html
 
 ## Usage
