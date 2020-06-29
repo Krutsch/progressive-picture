@@ -16,13 +16,13 @@ const observer = new IntersectionObserver(
         const img = entry.target.querySelector("img");
         if (!img) break;
 
-        preload(sources, "srcset", img, false).then((preloadedSource) => {
+        preload(sources, "srcset", img).then((preloadedSource) => {
           if (preloadedSource) {
             progessiveLoaded.add(entry.target as HTMLPictureElement);
             return; // source element is being used -> no need to preload <img>
           }
 
-          preload([img], "src", img, true).then(
+          preload([img], "src", img).then(
             (preloadedImage) =>
               preloadedImage &&
               progessiveLoaded.add(entry.target as HTMLPictureElement)
@@ -58,8 +58,7 @@ for (const picture of pictures) {
 async function preload(
   elements: Array<HTMLImageElement> | NodeListOf<HTMLSourceElement>,
   source: string,
-  original: HTMLImageElement,
-  alt: boolean
+  original: HTMLImageElement
 ) {
   for (const img of elements) {
     const preload = new Image();
@@ -92,9 +91,9 @@ async function preload(
         elem.removeAttribute("data-src");
       });
 
-      if (alt && img.dataset.alt) {
-        img.setAttribute("alt", img.dataset.alt);
-        img.removeAttribute("data-alt");
+      if (original.dataset.alt) {
+        original.setAttribute("alt", original.dataset.alt);
+        original.removeAttribute("data-alt");
       }
       return true;
     }
