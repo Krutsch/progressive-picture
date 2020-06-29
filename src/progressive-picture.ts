@@ -1,7 +1,7 @@
 const css = document.createElement("style");
 css.type = "text/css";
 css.innerText =
-  "picture { display: block; } picture > img { display: block; max-width: 100%; height: auto; filter: blur(0px); transition: filter 0.7s ease-in; } picture > img[data-src] { filter: blur(3px); } picture > img.img-progressive { width: auto; }";
+  "picture { display: inline-block; } picture > img { display: block; max-width: 100%; height: auto; filter: blur(0px); transition: filter 0.7s ease-in; } picture > img[data-src] { filter: blur(3px); } picture > img.img-progressive { width: auto; }";
 document.head.appendChild(css);
 
 const progessiveLoaded = new WeakSet<HTMLPictureElement>();
