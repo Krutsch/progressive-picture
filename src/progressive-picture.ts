@@ -96,7 +96,7 @@ async function preload(
           then: (resolve: (_: HTMLImageElement) => Promise<HTMLImageElement>) =>
             (preload.onload = () => resolve(preload)),
         };
-        imgOrSrc.setAttribute(src, preload.src);
+        imgOrSrc.setAttribute(src, imgOrSrc.dataset.src);
       }
 
       img.removeAttribute("data-src");
