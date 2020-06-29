@@ -34,18 +34,32 @@ const observer = new IntersectionObserver(
   { rootMargin: "0px", threshold: 0.5 }
 );
 
+function isTextNode(node: Node) {
+  return (node as Text).splitText !== void 0;
+}
+
 const DOMObserver = new MutationObserver((entries) => {
   for (const entry of entries) {
     for (const node of entry.addedNodes) {
-      if (node instanceof HTMLPictureElement) {
-        observer.observe(node);
-      }
+      if (isTextNode(node)) break;
+
+      const allNodes = (node as Element).querySelectorAll("*");
+      allNodes.forEach((added) => {
+        if (added instanceof HTMLPictureElement) {
+          observer.observe(added);
+        }
+      });
     }
     for (const node of entry.removedNodes) {
-      if (node instanceof HTMLPictureElement) {
-        observer.unobserve(node);
-        progessiveLoaded.delete(node);
-      }
+      if (isTextNode(node)) break;
+
+      const allNodes = (node as Element).querySelectorAll("*");
+      allNodes.forEach((removed) => {
+        if (removed instanceof HTMLPictureElement) {
+          observer.unobserve(removed);
+          progessiveLoaded.delete(removed);
+        }
+      });
     }
   }
 }).observe(document.body, { childList: true, subtree: true });
@@ -56,44 +70,49 @@ for (const picture of pictures) {
 }
 
 async function preload(
-  elements: Array<HTMLImageElement> | NodeListOf<HTMLSourceElement>,
-  source: string,
-  original: HTMLImageElement
+  imagesOrSrcs: Array<HTMLImageElement> | NodeListOf<HTMLSourceElement>,
+  src: string,
+  img: HTMLImageElement
 ) {
-  for (const img of elements) {
-    const preload = new Image();
-    if (!original.currentSrc) {
+  for (const imgOrSrc of imagesOrSrcs) {
+    if (!img.currentSrc) {
       await {
         then: (resolve: (_: HTMLImageElement) => Promise<HTMLImageElement>) =>
-          (original.onload = () => resolve(original)),
+          (img.onload = () => resolve(img)),
       };
     }
-    const current = original.currentSrc.split("/").slice(-1)[0];
-    const sourceSrc = img.getAttribute(source)?.split("/").slice(-1)[0];
+    const currentSrc = img.currentSrc.split("/").slice(-1)[0];
+    const maybeCurrent = imgOrSrc.getAttribute(src)?.split("/").slice(-1)[0];
 
     // preload when data-src for img exists and when currentSrc matches the element
-    if (img.dataset.src && current === sourceSrc) {
-      if (img.dataset.src.includes(", ")) {
-        img.setAttribute(source, img.dataset.src);
+    if (imgOrSrc.dataset.src && currentSrc === maybeCurrent) {
+      if (imgOrSrc.dataset.src.includes(", ")) {
+        imgOrSrc.setAttribute(src, imgOrSrc.dataset.src);
+        // cannot preload multiple images
       } else {
-        preload.src = img.dataset.src;
+        const preload = new Image();
+        preload.setAttribute(src, imgOrSrc.dataset.src);
         await {
           then: (resolve: (_: HTMLImageElement) => Promise<HTMLImageElement>) =>
             (preload.onload = () => resolve(preload)),
         };
-        img.setAttribute(source, preload.src);
+        imgOrSrc.setAttribute(src, preload.src);
       }
 
-      original.classList.add("img-progressive");
-      original.removeAttribute("data-src");
-      elements.forEach((elem: HTMLSourceElement | HTMLImageElement) => {
-        elem.setAttribute(source, elem.dataset.src!);
-        elem.removeAttribute("data-src");
+      img.removeAttribute("data-src");
+      imgOrSrc.removeAttribute("data-src");
+      // remove attribute for any other imgOrSrc
+      imagesOrSrcs.forEach((imgOrSrc: HTMLSourceElement | HTMLImageElement) => {
+        if (imgOrSrc.dataset.src) {
+          imgOrSrc.setAttribute(src, imgOrSrc.dataset.src!);
+          imgOrSrc.removeAttribute("data-src");
+        }
       });
+      img.classList.add("img-progressive");
 
-      if (original.dataset.alt) {
-        original.setAttribute("alt", original.dataset.alt);
-        original.removeAttribute("data-alt");
+      if (img.dataset.alt) {
+        img.setAttribute("alt", img.dataset.alt);
+        img.removeAttribute("data-alt");
       }
       return true;
     }
