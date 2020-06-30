@@ -1,6 +1,6 @@
 # Progressive Picture
 
-> This 787 bytes(compressed) library enhances Picture Elements with Progressive Image Loading and thus improves the initial time of images being displayed.
+> This 742 bytes (compressed) library enhances Picture Elements with Progressive Image Loading and thus improves the initial time of images being displayed.
 
 ## Install via NPM
 
@@ -10,8 +10,19 @@ $ npm install progressive-picture
 
 ## Install via Script Tag
 
+Firefox < 79
+
 ```
-<script defer type="module" src="https://unpkg.com/progressive-picture"></script>
+<link rel="stylesheet" href="https://unpkg.com/progressive-picture/dist/progressive-picture.css" />
+<script defer type="module" src="https://unpkg.com/progressive-picture/dist/progressive-picture.js"></script>
+```
+
+Chrome, Firefox >= 79
+
+```
+<link rel="preload" href="https://unpkg.com/progressive-picture/dist/progressive-picture.css" as="style"onload="this.onload=null;this.rel='stylesheet'" />
+<noscript><link rel="stylesheet" href="https://unpkg.com/progressive-picture/dist/progressive-picture.css"/></noscript>
+<script defer type="module" src="progressive-picture.js"></script>
 ```
 
 ## Example
