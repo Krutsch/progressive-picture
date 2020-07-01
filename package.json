@@ -27,7 +27,7 @@
   "devDependencies": {
     "csso-cli": "3.0.0",
     "esbuild": "0.5.16",
-    "typescript": "3.9.5"
+    "typescript": "3.9.6"
   },
   "repository": {
     "type": "git",
