@@ -56,3 +56,4 @@ Also, there is a data-alt Attribute that can be applied as alt, once the Image w
 ### Further
 
 As shown in the example, this library works great in combination with native lazy loading. Tip: add width and height to fix layout shifts.
+https://dev.to/fabkrut/enhancing-images-on-the-web-3b35
