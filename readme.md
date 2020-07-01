@@ -14,7 +14,7 @@ Firefox < 79
 
 ```
 <link rel="stylesheet" href="https://unpkg.com/progressive-picture/dist/progressive-picture.css" />
-<script defer type="module" src="https://unpkg.com/progressive-picture/dist/progressive-picture.js"></script>
+<script type="module" src="https://unpkg.com/progressive-picture/dist/progressive-picture.js"></script>
 ```
 
 Chrome, Firefox >= 79
@@ -22,7 +22,7 @@ Chrome, Firefox >= 79
 ```
 <link rel="preload" href="https://unpkg.com/progressive-picture/dist/progressive-picture.css" as="style"onload="this.onload=null;this.rel='stylesheet'" />
 <noscript><link rel="stylesheet" href="https://unpkg.com/progressive-picture/dist/progressive-picture.css"/></noscript>
-<script defer type="module" src="progressive-picture.js"></script>
+<script type="module" src="progressive-picture.js"></script>
 ```
 
 ## Example
