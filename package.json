@@ -26,7 +26,7 @@
   "license": "MIT",
   "devDependencies": {
     "csso-cli": "3.0.0",
-    "esbuild": "0.5.22",
+    "esbuild": "0.5.23",
     "typescript": "3.9.6"
   },
   "repository": {
