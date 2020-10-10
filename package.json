@@ -1,6 +1,6 @@
 {
   "name": "progressive-picture",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Native Lazy Loaded Picture Element with Progressive Image Change",
   "main": "dist/progressive-picture.js",
   "scripts": {
@@ -26,8 +26,8 @@
   "license": "MIT",
   "devDependencies": {
     "csso-cli": "3.0.0",
-    "typescript": "4.0.3"
-    "esbuild": "0.7.2",
+    "typescript": "4.0.3",
+    "esbuild": "0.7.2"
   },
   "repository": {
     "type": "git",
