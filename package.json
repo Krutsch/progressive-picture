@@ -2,17 +2,16 @@
   "name": "progressive-picture",
   "version": "2.0.0",
   "description": "Native Lazy Loaded Picture Element with Progressive Image Change",
-  "type": "module",
   "main": "./dist/progressive-picture.js",
   "module": "./dist/progressive-picture.js",
   "types": "./dist/progressive-picture.d.ts",
   "exports": {
-    "require": "./dist/progressive-picture.cjs.js",
+    "require": "./dist/progressive-picture.js",
     "import": "./dist/progressive-picture.js",
     "default": "./dist/progressive-picture.js"
   },
   "scripts": {
-    "build": "tsc && node utils/esm2c.js"
+    "build": "tsc"
   },
   "keywords": [
     "image",
