@@ -1,10 +1,18 @@
 {
   "name": "progressive-picture",
-  "version": "1.3.1",
+  "version": "2.0.0",
   "description": "Native Lazy Loaded Picture Element with Progressive Image Change",
-  "main": "dist/progressive-picture.js",
+  "type": "module",
+  "main": "./dist/progressive-picture.js",
+  "module": "./dist/progressive-picture.js",
+  "types": "./dist/progressive-picture.d.ts",
+  "exports": {
+    "require": "./dist/progressive-picture.cjs.js",
+    "import": "./dist/progressive-picture.js",
+    "default": "./dist/progressive-picture.js"
+  },
   "scripts": {
-    "start": "tsc && esbuild --target=es2017 --bundle --format=esm --minify src/progressive-picture.ts --outfile=dist/progressive-picture.js && csso src/progressive-picture.css -o dist/progressive-picture.css"
+    "build": "tsc && node utils/esm2c.js"
   },
   "keywords": [
     "image",
@@ -25,13 +33,11 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "csso-cli": "3.0.0",
-    "typescript": "4.0.3",
-    "esbuild": "0.7.2"
+    "typescript": "^4.1.3"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Krutsch/progressive-picture.git"
   },
-  "bugs": "https://github.com/Krutsch/progressive-picture"
+  "bugs": "https://github.com/Krutsch/progressive-picture/issues"
 }
