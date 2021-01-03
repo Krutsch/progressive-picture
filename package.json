@@ -11,7 +11,8 @@
     "default": "./dist/progressive-picture.js"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "update": "npx npm-check-updates -u && npx typesync && npm i && npm outdated"
   },
   "keywords": [
     "image",
