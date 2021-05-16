@@ -80,6 +80,8 @@ async function preload(imgOrSrcs, src, img) {
                     then: (resolve) => (preload.onload = resolve),
                 };
             }
+            if (!imgOrSrc.dataset.src)
+                continue;
             imgOrSrc.setAttribute(src, imgOrSrc.dataset.src);
             img.removeAttribute("data-src");
             // Remove attribute for any other source

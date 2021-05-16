@@ -99,6 +99,7 @@ async function preload(
           then: (resolve: typeof Promise.resolve) => (preload.onload = resolve),
         };
       }
+      if (!imgOrSrc.dataset.src) continue;
       imgOrSrc.setAttribute(src, imgOrSrc.dataset.src);
 
       img.removeAttribute("data-src");
