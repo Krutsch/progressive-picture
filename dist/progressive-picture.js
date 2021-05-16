@@ -1,19 +1,4 @@
 "use strict";
-document.head.insertAdjacentHTML("beforeend", `<style>
-  picture > img {
-    display: block;
-    max-width: 100%;
-    height: auto;
-    filter: blur(0);
-    transition: filter 0.7s ease-in;
-  }
-  picture > img[data-src] {
-    filter: blur(3px);
-  }
-  picture > img.img-progressive {
-    width: auto;
-  }
-</style>`);
 const progessiveLoaded = new WeakSet();
 const observer = new IntersectionObserver((entries) => {
     for (const entry of entries) {

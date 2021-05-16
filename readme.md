@@ -15,6 +15,24 @@ $ npm install progressive-picture
 <script type="module" src="https://unpkg.com/progressive-picture"></script>
 ```
 
+## Add the styles
+
+```css
+picture > img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  filter: blur(0);
+  transition: filter 0.7s ease-in;
+}
+picture > img[data-src] {
+  filter: blur(3px);
+}
+picture > img.img-progressive {
+  width: auto;
+}
+```
+
 ## Example
 
 ```html
