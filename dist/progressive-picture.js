@@ -94,3 +94,11 @@ function iteratePictures(node) {
         },
     });
 }
+addEventListener("afterRouting", () => {
+    //@ts-ignore
+    if (window.isHMR) {
+        for (const img of document.body.querySelectorAll("picture > img[data-src]")) {
+            img.removeAttribute("data-src");
+        }
+    }
+});
