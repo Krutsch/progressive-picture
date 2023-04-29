@@ -33,7 +33,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.4"
   },
   "repository": {
     "type": "git",
