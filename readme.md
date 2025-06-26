@@ -32,6 +32,28 @@ picture > img.img-progressive {
   width: auto;
 }
 ```
+or for mostly full-bleed images
+```css
+picture {
+  @apply relative;
+
+  & img {
+    @apply block h-auto max-w-full;
+
+    & .img-progressive {
+      @apply w-auto;
+    }
+  }
+
+  &::after {
+    @apply pointer-events-none absolute inset-0 backdrop-blur-none duration-300 ease-in-out content-[""] motion-safe:transition-[backdrop-filter];
+  }
+
+  &:has(img[data-src])::after {
+    @apply backdrop-blur-xs;
+  }
+}
+```
 
 ## Example
 
