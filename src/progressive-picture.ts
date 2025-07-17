@@ -1,57 +1,95 @@
 const progessiveLoaded = new WeakSet<HTMLPictureElement>();
 
-const observer = new IntersectionObserver((entries) => {
-  for (const entry of entries) {
-    if (
-      entry.intersectionRatio > 0 &&
-      !progessiveLoaded.has(entry.target as HTMLPictureElement)
-    ) {
-      const sources = entry.target.querySelectorAll("source");
-      const img = entry.target.querySelector("img");
-      if (!img) break;
+function observe() {
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (
+        entry.intersectionRatio > 0 &&
+        !progessiveLoaded.has(entry.target as HTMLPictureElement)
+      ) {
+        const sources = entry.target.querySelectorAll("source");
+        const img = entry.target.querySelector("img");
+        if (!img) break;
 
-      preload(sources, "srcset", img).then((preloadedSource) => {
-        if (preloadedSource) {
-          progessiveLoaded.add(entry.target as HTMLPictureElement);
-          return; // source element is being used -> no need to preload <img>
-        }
+        preload(sources, "srcset", img).then((preloadedSource) => {
+          if (preloadedSource) {
+            progessiveLoaded.add(entry.target as HTMLPictureElement);
+            return; // source element is being used -> no need to preload <img>
+          }
 
-        preload([img], "src", img).then(
-          (preloadedImage) =>
-            preloadedImage &&
-            progessiveLoaded.add(entry.target as HTMLPictureElement)
-        );
-      });
+          preload([img], "src", img).then(
+            (preloadedImage) =>
+              preloadedImage &&
+              progessiveLoaded.add(entry.target as HTMLPictureElement)
+          );
+        });
+      }
     }
-  }
-});
+  });
 
-const pictures = iteratePictures(document.body);
-let current;
-while ((current = pictures.nextNode() as HTMLPictureElement)) {
-  observer.observe(current);
+  const pictures = iteratePictures(document.body);
+  let current;
+  while ((current = pictures.nextNode() as HTMLPictureElement)) {
+    observer.observe(current);
+  }
+
+  new MutationObserver((entries) => {
+    for (const entry of entries) {
+      for (const node of entry.addedNodes) {
+        const pictures = iteratePictures(node);
+        let current;
+        while ((current = pictures.nextNode() as HTMLPictureElement)) {
+          observer.observe(current);
+        }
+      }
+
+      for (const node of entry.removedNodes) {
+        const pictures = iteratePictures(node);
+        let current;
+        while ((current = pictures.nextNode() as HTMLPictureElement)) {
+          observer.unobserve(current);
+          progessiveLoaded.delete(current);
+        }
+      }
+    }
+  }).observe(document.body, { childList: true, subtree: true });
+
+  addEventListener("afterRouting", () => {
+    //@ts-ignore
+    if (window.isHMR) {
+      for (const img of document.body.querySelectorAll(
+        "picture > img[data-src]"
+      )) {
+        img.removeAttribute("data-src");
+      }
+    }
+  });
 }
 
-const DOMObserver = new MutationObserver((entries) => {
-  for (const entry of entries) {
-    for (const node of entry.addedNodes) {
-      const pictures = iteratePictures(node);
-      let current;
-      while ((current = pictures.nextNode() as HTMLPictureElement)) {
-        observer.observe(current);
-      }
-    }
+function forceLoad(img: HTMLImageElement | HTMLPictureElement) {
+  if (img instanceof HTMLPictureElement) {
+    const sources = img.querySelectorAll("source");
+    const imgElement = img.querySelector("img");
+    if (!imgElement) return;
 
-    for (const node of entry.removedNodes) {
-      const pictures = iteratePictures(node);
-      let current;
-      while ((current = pictures.nextNode() as HTMLPictureElement)) {
-        observer.unobserve(current);
-        progessiveLoaded.delete(current);
+    preload(sources, "srcset", imgElement).then((preloadedSource) => {
+      if (preloadedSource) {
+        progessiveLoaded.add(img as HTMLPictureElement);
+        return; // source element is being used -> no need to preload <img>
       }
-    }
+
+      preload([imgElement], "src", imgElement).then(
+        (preloadedImage) =>
+          preloadedImage && progessiveLoaded.add(img as HTMLPictureElement)
+      );
+    });
+  } else if (img instanceof HTMLImageElement) {
+    preload([img], "src", img).then(
+      (preloadedImage) =>
+        preloadedImage && progessiveLoaded.add(img as HTMLPictureElement)
+    );
   }
-}).observe(document.body, { childList: true, subtree: true });
+}
 
 async function preload(
   imgOrSrcs: Array<HTMLImageElement> | NodeListOf<HTMLSourceElement>,
@@ -113,13 +151,4 @@ function iteratePictures(node: Node) {
   });
 }
 
-addEventListener("afterRouting", () => {
-  //@ts-ignore
-  if (window.isHMR) {
-    for (const img of document.body.querySelectorAll(
-      "picture > img[data-src]"
-    )) {
-      img.removeAttribute("data-src");
-    }
-  }
-});
+export { observe, forceLoad };

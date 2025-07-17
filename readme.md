@@ -3,16 +3,21 @@
 > This 700 bytes (compressed) library enhances `Picture Elements` with Progressive Image Loading and thus improves the initial time of images being displayed.
 > You can find out more from the [blog post](https://dev.to/fabkrut/enhancing-images-on-the-web-3b35).
 
-## Install via NPM
+## Installation and usage via NPM
 
 ```
 $ npm install progressive-picture
+import { observe } from "progressive-picture";
+observe()
 ```
 
-## Install via Script Tag
+## Installation and usage via Script Tag
 
 ```
-<script type="module" src="https://unpkg.com/progressive-picture"></script>
+<script type="module">
+  import { observe } from "https://unpkg.com/progressive-picture";
+  observe();
+</script>
 ```
 
 ## Add the styles
