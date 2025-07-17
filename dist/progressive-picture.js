@@ -52,22 +52,24 @@ function observe() {
         }
     });
 }
-function forceLoad(img) {
+async function forceLoad(img) {
     if (img instanceof HTMLPictureElement) {
         const sources = img.querySelectorAll("source");
         const imgElement = img.querySelector("img");
         if (!imgElement)
             return;
-        preload(sources, "srcset", imgElement).then((preloadedSource) => {
-            if (preloadedSource) {
-                progessiveLoaded.add(img);
-                return; // source element is being used -> no need to preload <img>
-            }
+        const preloadedSource = await preload(sources, "srcset", imgElement);
+        if (preloadedSource) {
+            progessiveLoaded.add(img);
+        }
+        else {
             preload([imgElement], "src", imgElement).then((preloadedImage) => preloadedImage && progessiveLoaded.add(img));
-        });
+        }
     }
     else if (img instanceof HTMLImageElement) {
-        preload([img], "src", img).then((preloadedImage) => preloadedImage && progessiveLoaded.add(img));
+        const preloadedSource = await preload([img], "src", img);
+        if (preloadedSource)
+            progessiveLoaded.add(img);
     }
 }
 async function preload(imgOrSrcs, src, img) {

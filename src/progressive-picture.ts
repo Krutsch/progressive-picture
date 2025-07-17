@@ -66,28 +66,24 @@ function observe() {
   });
 }
 
-function forceLoad(img: HTMLImageElement | HTMLPictureElement) {
+async function forceLoad(img: HTMLImageElement | HTMLPictureElement) {
   if (img instanceof HTMLPictureElement) {
     const sources = img.querySelectorAll("source");
     const imgElement = img.querySelector("img");
     if (!imgElement) return;
 
-    preload(sources, "srcset", imgElement).then((preloadedSource) => {
-      if (preloadedSource) {
-        progessiveLoaded.add(img as HTMLPictureElement);
-        return; // source element is being used -> no need to preload <img>
-      }
-
+    const preloadedSource = await preload(sources, "srcset", imgElement);
+    if (preloadedSource) {
+      progessiveLoaded.add(img as HTMLPictureElement);
+    } else {
       preload([imgElement], "src", imgElement).then(
         (preloadedImage) =>
           preloadedImage && progessiveLoaded.add(img as HTMLPictureElement)
       );
-    });
+    }
   } else if (img instanceof HTMLImageElement) {
-    preload([img], "src", img).then(
-      (preloadedImage) =>
-        preloadedImage && progessiveLoaded.add(img as HTMLPictureElement)
-    );
+    const preloadedSource = await preload([img], "src", img);
+    if (preloadedSource) progessiveLoaded.add(img as HTMLPictureElement);
   }
 }
 
