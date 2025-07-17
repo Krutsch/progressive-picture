@@ -8,7 +8,7 @@
 ```
 $ npm install progressive-picture
 import { observe } from "progressive-picture";
-observe()
+observe();
 ```
 
 ## Installation and usage via Script Tag
