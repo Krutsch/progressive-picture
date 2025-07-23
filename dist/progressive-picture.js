@@ -84,17 +84,15 @@ async function preload(imgOrSrcs, src, img) {
         const maybeCurrentSrc = imgOrSrc.getAttribute(src)?.split("/").pop(); // Logic to find out which Source Element is being used
         // preload when data-src exists and when found the correct source element | fallback img
         if (imgOrSrc.dataset.src && currentSrc === maybeCurrentSrc) {
+            const preload = new Image();
             if (imgOrSrc.dataset.src.includes(", ")) {
-                // Cannot preload multiple images - try to add more source elements with media attribute.
+                preload.setAttribute("sizes", imgOrSrc.sizes);
             }
-            else {
-                const preload = new Image();
-                preload.setAttribute(src, imgOrSrc.dataset.src);
-                await {
-                    then: (resolve) => (preload.onload = resolve),
-                };
-            }
-            if (!imgOrSrc.dataset.src)
+            preload.setAttribute(src, imgOrSrc.dataset.src);
+            await {
+                then: (resolve) => (preload.onload = resolve),
+            };
+            if (!preload.currentSrc)
                 continue;
             imgOrSrc.setAttribute(src, imgOrSrc.dataset.src);
             img.removeAttribute("data-src");
@@ -105,6 +103,7 @@ async function preload(imgOrSrcs, src, img) {
                     imgOrSrc.removeAttribute("data-src");
                 }
             });
+            img.src = preload.currentSrc;
             img.classList.add("img-progressive");
             if (img.dataset.alt) {
                 img.setAttribute("alt", img.dataset.alt);
