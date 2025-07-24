@@ -1,4 +1,4 @@
-const progessiveLoaded = new WeakSet<HTMLPictureElement>();
+const progessiveLoaded = new WeakSet<HTMLPictureElement | HTMLImageElement>();
 
 function observe() {
   const observer = new IntersectionObserver((entries) => {
@@ -72,25 +72,24 @@ async function forceLoad(img: HTMLImageElement | HTMLPictureElement) {
     const imgElement = img.querySelector("img");
     if (!imgElement) return;
 
-    const preloadedSource = await preload(sources, "srcset", imgElement);
+    const preloadedSource = await preload(sources, "srcset", imgElement, true);
     if (preloadedSource) {
       progessiveLoaded.add(img as HTMLPictureElement);
     } else {
-      preload([imgElement], "src", imgElement).then(
-        (preloadedImage) =>
-          preloadedImage && progessiveLoaded.add(img as HTMLPictureElement)
-      );
+      const preloadedImage = await preload([imgElement], "src", imgElement);
+      if (preloadedImage) progessiveLoaded.add(img as HTMLPictureElement);
     }
   } else if (img instanceof HTMLImageElement) {
-    const preloadedSource = await preload([img], "src", img);
-    if (preloadedSource) progessiveLoaded.add(img as HTMLPictureElement);
+    const preloadedImage = await preload([img], "src", img);
+    if (preloadedImage) progessiveLoaded.add(img);
   }
 }
 
 async function preload(
   imgOrSrcs: Array<HTMLImageElement> | NodeListOf<HTMLSourceElement>,
   src: string,
-  img: HTMLImageElement
+  img: HTMLImageElement,
+  force = false
 ) {
   // Wait until image has been loaded
   if (!img.currentSrc) {
@@ -102,29 +101,34 @@ async function preload(
   for (const imgOrSrc of imgOrSrcs) {
     const currentSrc = img.currentSrc.split("/").pop();
     const maybeCurrentSrc = imgOrSrc.getAttribute(src)?.split("/").pop(); // Logic to find out which Source Element is being used
+    const dataSrc = force
+      ? imgOrSrc.getAttribute(src)?.includes("-preview")
+        ? imgOrSrc.dataset.src
+        : imgOrSrc.getAttribute(src)
+      : imgOrSrc.dataset.src;
 
     // preload when data-src exists and when found the correct source element | fallback img
-    if (imgOrSrc.dataset.src && currentSrc === maybeCurrentSrc) {
+    if (dataSrc && (force || currentSrc === maybeCurrentSrc)) {
       const preload = new Image();
 
-      if (imgOrSrc.dataset.src.includes(", ")) {
-        preload.setAttribute("sizes", imgOrSrc.sizes);
+      if (dataSrc.includes(", ")) {
+        preload.setAttribute("sizes", force ? "89vw" : imgOrSrc.sizes);
       }
 
-      preload.setAttribute(src, imgOrSrc.dataset.src);
+      preload.setAttribute(src, dataSrc);
       await {
         then: (resolve: typeof Promise.resolve) => (preload.onload = resolve),
       };
 
-      if (!preload.currentSrc || !imgOrSrc.dataset.src) continue;
+      if (!preload.currentSrc || !dataSrc) continue;
 
-      imgOrSrc.setAttribute(src, imgOrSrc.dataset.src);
+      imgOrSrc.setAttribute(src, dataSrc);
 
       img.removeAttribute("data-src");
       // Remove attribute for any other source
       imgOrSrcs.forEach((imgOrSrc: HTMLSourceElement | HTMLImageElement) => {
-        if (imgOrSrc.dataset.src) {
-          imgOrSrc.setAttribute(src, imgOrSrc.dataset.src);
+        if (dataSrc) {
+          imgOrSrc.setAttribute(src, dataSrc);
           imgOrSrc.removeAttribute("data-src");
         }
       });
