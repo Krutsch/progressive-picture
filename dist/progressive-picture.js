@@ -92,7 +92,7 @@ async function preload(imgOrSrcs, src, img) {
             await {
                 then: (resolve) => (preload.onload = resolve),
             };
-            if (!preload.currentSrc)
+            if (!preload.currentSrc || !imgOrSrc.dataset.src)
                 continue;
             imgOrSrc.setAttribute(src, imgOrSrc.dataset.src);
             img.removeAttribute("data-src");

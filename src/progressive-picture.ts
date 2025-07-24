@@ -116,7 +116,7 @@ async function preload(
         then: (resolve: typeof Promise.resolve) => (preload.onload = resolve),
       };
 
-      if (!preload.currentSrc) continue;
+      if (!preload.currentSrc || !imgOrSrc.dataset.src) continue;
 
       imgOrSrc.setAttribute(src, imgOrSrc.dataset.src);
 
