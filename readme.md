@@ -3,12 +3,19 @@
 > This 700 bytes (compressed) library enhances `Picture Elements` with Progressive Image Loading and thus improves the initial time of images being displayed.
 > You can find out more from the [blog post](https://dev.to/fabkrut/enhancing-images-on-the-web-3b35).
 
-## Installation and usage via NPM
+## Installation and usage via npm
 
+```bash
+npm install progressive-picture
 ```
-$ npm install progressive-picture
+
+```ts
 import { observe } from "progressive-picture";
-observe();
+
+const stopObserving = observe();
+
+// Disconnect both DOM observers when the integration is torn down.
+stopObserving();
 ```
 
 ## Installation and usage via Script Tag
@@ -37,7 +44,9 @@ picture > img.img-progressive {
   width: auto;
 }
 ```
+
 or for mostly full-bleed images
+
 ```css
 picture {
   @apply relative;
@@ -45,7 +54,7 @@ picture {
   & img {
     @apply block h-auto max-w-full;
 
-    & .img-progressive {
+    &.img-progressive {
       @apply w-auto;
     }
   }
@@ -65,7 +74,7 @@ picture {
 ```html
 <picture>
   <source srcset="eu.preview.webp" data-src="eu.webp" type="image/webp" />
-  <source srcset="eu.preview.jpg" data-src="eu.jpg" type="image/jpg" />
+  <source srcset="eu.preview.jpg" data-src="eu.jpg" type="image/jpeg" />
   <img
     src="eu.preview.jpg"
     data-src="eu.jpg"
@@ -85,8 +94,22 @@ https://lazy-load-picture.netlify.app/masonry.html
 
 ## Usage
 
-The `srcset` of `<source>` and the `src` of `<img>` has to be filled with the URI for the low-quality image (or in case of the `<source>` element: a `srcset` of low quality preview pictures. The data-src holds the high-quality image(s) and will be replaced once it has been loaded.  
-Also, there is a data-alt Attribute that can be applied as alt, once the Image was replaced. This fixes the inelegance of displaying text before an image appears.
+Set each `<source>` element's `srcset` and the `<img>` element's `src` to low-quality preview URLs. Put the matching high-quality URL or `srcset` in `data-src`. The library preloads the active high-quality source before replacing all preview attributes.
+
+Use `data-alt` to defer alternative text until the high-quality image has loaded. The library moves its value to `alt` during replacement.
+
+Call `forceLoad()` when an image must load without waiting for viewport intersection:
+
+```ts
+import { forceLoad } from "progressive-picture";
+
+const picture = document.querySelector("picture");
+if (picture) {
+  await forceLoad(picture);
+}
+```
+
+`forceLoad()` accepts an `HTMLPictureElement` or `HTMLImageElement`. On preload failure, it leaves the preview intact.
 
 ### Further Optimization
 

@@ -1,132 +1,156 @@
-const progessiveLoaded = new WeakSet();
+const progressiveLoaded = new WeakSet();
+const progressiveLoading = new WeakMap();
 function observe() {
-    const observer = new IntersectionObserver((entries) => {
+    const intersectionObserver = new IntersectionObserver((entries) => {
         for (const entry of entries) {
-            if (entry.intersectionRatio > 0 &&
-                !progessiveLoaded.has(entry.target)) {
-                const sources = entry.target.querySelectorAll("source");
-                const img = entry.target.querySelector("img");
-                if (!img)
-                    break;
-                preload(sources, "srcset", img).then((preloadedSource) => {
-                    if (preloadedSource) {
-                        progessiveLoaded.add(entry.target);
-                        return; // source element is being used -> no need to preload <img>
-                    }
-                    preload([img], "src", img).then((preloadedImage) => preloadedImage &&
-                        progessiveLoaded.add(entry.target));
+            if (entry.isIntersecting &&
+                entry.target instanceof HTMLPictureElement &&
+                !progressiveLoaded.has(entry.target)) {
+                void loadProgressive(entry.target).then((loaded) => {
+                    if (loaded)
+                        intersectionObserver.unobserve(entry.target);
                 });
             }
         }
     });
-    const pictures = iteratePictures(document.body);
-    let current;
-    while ((current = pictures.nextNode())) {
-        observer.observe(current);
-    }
-    new MutationObserver((entries) => {
+    visitPictures(document.body, (picture) => intersectionObserver.observe(picture));
+    const mutationObserver = new MutationObserver((entries) => {
         for (const entry of entries) {
             for (const node of entry.addedNodes) {
-                const pictures = iteratePictures(node);
-                let current;
-                while ((current = pictures.nextNode())) {
-                    observer.observe(current);
-                }
+                visitPictures(node, (picture) => intersectionObserver.observe(picture));
             }
             for (const node of entry.removedNodes) {
-                const pictures = iteratePictures(node);
-                let current;
-                while ((current = pictures.nextNode())) {
-                    observer.unobserve(current);
-                    progessiveLoaded.delete(current);
-                }
-            }
-        }
-    }).observe(document.body, { childList: true, subtree: true });
-    addEventListener("afterRouting", () => {
-        //@ts-ignore
-        if (window.isHMR) {
-            for (const img of document.body.querySelectorAll("picture > img[data-src]")) {
-                img.removeAttribute("data-src");
+                visitPictures(node, (picture) => {
+                    intersectionObserver.unobserve(picture);
+                    progressiveLoaded.delete(picture);
+                    progressiveLoading.delete(picture);
+                });
             }
         }
     });
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
+    return () => {
+        intersectionObserver.disconnect();
+        mutationObserver.disconnect();
+    };
 }
-async function forceLoad(img) {
-    if (img instanceof HTMLPictureElement) {
-        const sources = img.querySelectorAll("source");
-        const imgElement = img.querySelector("img");
-        if (!imgElement)
-            return;
-        const preloadedSource = await preload(sources, "srcset", imgElement, true);
-        if (preloadedSource) {
-            progessiveLoaded.add(img);
+function forceLoad(element) {
+    return loadProgressive(element).then(() => undefined);
+}
+function loadProgressive(element) {
+    if (progressiveLoaded.has(element))
+        return Promise.resolve(true);
+    const activeLoad = progressiveLoading.get(element);
+    if (activeLoad)
+        return activeLoad;
+    const load = (element instanceof HTMLPictureElement
+        ? loadPicture(element)
+        : loadImage(element))
+        .then((loaded) => {
+        if (loaded)
+            progressiveLoaded.add(element);
+        return loaded;
+    })
+        .finally(() => progressiveLoading.delete(element));
+    progressiveLoading.set(element, load);
+    return load;
+}
+async function loadPicture(picture) {
+    const img = picture.querySelector("img");
+    if (!img)
+        return false;
+    const sources = Array.from(picture.querySelectorAll("source[data-src]"));
+    const hasCurrentSource = await waitForCurrentSource(img);
+    const activeSource = hasCurrentSource
+        ? sources.find((source) => sourceMatchesCurrentImage(source, img))
+        : undefined;
+    const candidate = activeSource ?? (img.dataset.src ? img : undefined);
+    if (!candidate || !(await preload(candidate, img)))
+        return false;
+    promotePicture(picture, img);
+    return true;
+}
+async function loadImage(img) {
+    if (!img.dataset.src || !(await preload(img, img)))
+        return false;
+    img.src = img.dataset.src;
+    finishImage(img);
+    return true;
+}
+function waitForCurrentSource(img) {
+    if (img.currentSrc)
+        return Promise.resolve(true);
+    if (img.complete)
+        return Promise.resolve(false);
+    return new Promise((resolve) => {
+        const finish = () => {
+            img.removeEventListener("load", finish);
+            img.removeEventListener("error", finish);
+            resolve(Boolean(img.currentSrc));
+        };
+        img.addEventListener("load", finish);
+        img.addEventListener("error", finish);
+    });
+}
+function sourceMatchesCurrentImage(source, img) {
+    const currentSrc = normalizeUrl(img.currentSrc);
+    return parseSrcset(source.srcset).some((candidate) => normalizeUrl(candidate) === currentSrc);
+}
+function parseSrcset(srcset) {
+    return srcset
+        .split(",")
+        .map((candidate) => candidate.trim().split(/\s+/, 1)[0])
+        .filter(Boolean);
+}
+function normalizeUrl(url) {
+    try {
+        return new URL(url, document.baseURI).href;
+    }
+    catch {
+        return url;
+    }
+}
+function preload(source, img) {
+    const dataSrc = source.dataset.src;
+    if (!dataSrc)
+        return Promise.resolve(false);
+    return new Promise((resolve) => {
+        const preloadedImage = new Image();
+        preloadedImage.onload = () => resolve(true);
+        preloadedImage.onerror = () => resolve(false);
+        if (source instanceof HTMLSourceElement) {
+            preloadedImage.sizes = source.sizes || img.sizes;
+            preloadedImage.srcset = dataSrc;
         }
         else {
-            const preloadedImage = await preload([imgElement], "src", imgElement);
-            if (preloadedImage)
-                progessiveLoaded.add(img);
+            preloadedImage.src = dataSrc;
         }
-    }
-    else if (img instanceof HTMLImageElement) {
-        const preloadedImage = await preload([img], "src", img);
-        if (preloadedImage)
-            progessiveLoaded.add(img);
-    }
-}
-async function preload(imgOrSrcs, src, img, force = false) {
-    // Wait until image has been loaded
-    if (!img.currentSrc) {
-        await {
-            then: (resolve) => (img.onload = resolve),
-        };
-    }
-    for (const imgOrSrc of imgOrSrcs) {
-        const currentSrc = img.currentSrc.split("/").pop();
-        const maybeCurrentSrc = imgOrSrc.getAttribute(src)?.split("/").pop(); // Logic to find out which Source Element is being used
-        const dataSrc = force
-            ? imgOrSrc.getAttribute(src)?.includes("-preview")
-                ? imgOrSrc.dataset.src
-                : imgOrSrc.getAttribute(src)
-            : imgOrSrc.dataset.src;
-        // preload when data-src exists and when found the correct source element | fallback img
-        if (dataSrc && (force || currentSrc === maybeCurrentSrc)) {
-            const preload = new Image();
-            if (dataSrc.includes(", ")) {
-                preload.setAttribute("sizes", force ? "89vw" : imgOrSrc.sizes);
-            }
-            preload.setAttribute(src, dataSrc);
-            await {
-                then: (resolve) => (preload.onload = resolve),
-            };
-            if (!preload.currentSrc || !dataSrc)
-                continue;
-            imgOrSrc.setAttribute(src, dataSrc);
-            img.removeAttribute("data-src");
-            // Remove attribute for any other source
-            imgOrSrcs.forEach((imgOrSrc) => {
-                if (dataSrc) {
-                    imgOrSrc.setAttribute(src, dataSrc);
-                    imgOrSrc.removeAttribute("data-src");
-                }
-            });
-            img.src = preload.currentSrc;
-            img.classList.add("img-progressive");
-            if (img.dataset.alt) {
-                img.setAttribute("alt", img.dataset.alt);
-                img.removeAttribute("data-alt");
-            }
-            return true;
-        }
-    }
-}
-function iteratePictures(node) {
-    return document.createNodeIterator(node, NodeFilter.SHOW_ELEMENT, {
-        acceptNode(elem) {
-            return elem.localName === "picture"
-                ? NodeFilter.FILTER_ACCEPT
-                : NodeFilter.FILTER_REJECT;
-        },
     });
+}
+function promotePicture(picture, img) {
+    for (const source of picture.querySelectorAll("source[data-src]")) {
+        source.srcset = source.dataset.src ?? source.srcset;
+        source.removeAttribute("data-src");
+    }
+    if (img.dataset.src)
+        img.src = img.dataset.src;
+    finishImage(img);
+}
+function finishImage(img) {
+    img.removeAttribute("data-src");
+    img.classList.add("img-progressive");
+    if (img.dataset.alt) {
+        img.alt = img.dataset.alt;
+        img.removeAttribute("data-alt");
+    }
+}
+function visitPictures(node, visit) {
+    if (node instanceof HTMLPictureElement)
+        visit(node);
+    if (node instanceof Element || node instanceof DocumentFragment) {
+        for (const picture of node.querySelectorAll("picture")) {
+            visit(picture);
+        }
+    }
 }
 export { observe, forceLoad };

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Progressive Picture Browser Test</title>
+    <style>
+      body {
+        margin: 0;
+      }
+
+      picture {
+        display: block;
+        margin-top: 1200px;
+      }
+    </style>
+  </head>
+  <body>
+    <picture>
+      <source
+        media="(min-width: 600px)"
+        srcset="/test/browser/pixel.svg?desktop-preview"
+        data-src="/test/browser/pixel.svg?desktop-full"
+      />
+      <source
+        media="(max-width: 599px)"
+        srcset="/test/browser/pixel.svg?mobile-preview"
+        data-src="/test/browser/pixel.svg?mobile-full"
+      />
+      <img
+        src="/test/browser/pixel.svg?fallback-preview"
+        data-src="/test/browser/pixel.svg?fallback-full"
+        data-alt="Progressively loaded test image"
+        width="100"
+        height="100"
+        alt=""
+      />
+    </picture>
+
+    <script type="module">
+      import { observe } from "/dist/progressive-picture.js";
+
+      window.stopObserving = observe();
+    </script>
+  </body>
+</html>
