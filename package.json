@@ -46,7 +46,7 @@
   "license": "MIT",
   "devDependencies": {
     "@playwright/test": "^1.62.0",
-    "jsdom": "^29.1.1",
+    "jsdom": "^30.0.0",
     "typescript": "^7.0.2",
     "vite": "^8.1.5",
     "vitest": "^4.1.10"
