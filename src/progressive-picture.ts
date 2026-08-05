@@ -50,11 +50,12 @@ function observe() {
 function forceLoad(
   element: HTMLImageElement | HTMLPictureElement,
 ): Promise<void> {
-  return loadProgressive(element).then(() => undefined);
+  return loadProgressive(element, true).then(() => undefined);
 }
 
 function loadProgressive(
   element: HTMLImageElement | HTMLPictureElement,
+  force = false,
 ): Promise<boolean> {
   if (progressiveLoaded.has(element)) return Promise.resolve(true);
 
@@ -63,7 +64,7 @@ function loadProgressive(
 
   const load = (
     element instanceof HTMLPictureElement
-      ? loadPicture(element)
+      ? loadPicture(element, force)
       : loadImage(element)
   )
     .then((loaded) => {
@@ -76,29 +77,48 @@ function loadProgressive(
   return load;
 }
 
-async function loadPicture(picture: HTMLPictureElement) {
+async function loadPicture(picture: HTMLPictureElement, force = false) {
   const img = picture.querySelector("img");
   if (!img) return false;
 
   const sources = Array.from(
-    picture.querySelectorAll<HTMLSourceElement>("source[data-src]"),
+    picture.querySelectorAll<HTMLSourceElement>(
+      force ? "source" : "source[data-src]",
+    ),
   );
-  const hasCurrentSource = await waitForCurrentSource(img);
+  const hasCurrentSource = force
+    ? Boolean(img.currentSrc)
+    : await waitForCurrentSource(img);
   const activeSource = hasCurrentSource
     ? sources.find((source) => sourceMatchesCurrentImage(source, img))
     : undefined;
-  const candidate = activeSource ?? (img.dataset.src ? img : undefined);
+  const candidates = force
+    ? [
+        ...(activeSource ? [activeSource] : []),
+        ...sources.filter((source) => source !== activeSource),
+        ...(img.dataset.src ? [img] : []),
+      ]
+    : [
+        ...(activeSource ? [activeSource] : []),
+        ...(img.dataset.src ? [img] : []),
+      ];
 
-  if (!candidate || !(await preload(candidate, img))) return false;
+  for (const candidate of candidates) {
+    const highResolutionSrc = await preload(candidate, img, force);
+    if (!highResolutionSrc) continue;
 
-  promotePicture(picture, img);
-  return true;
+    promotePicture(picture, img, highResolutionSrc);
+    return true;
+  }
+
+  return false;
 }
 
 async function loadImage(img: HTMLImageElement) {
-  if (!img.dataset.src || !(await preload(img, img))) return false;
+  const highResolutionSrc = img.dataset.src && (await preload(img, img));
+  if (!highResolutionSrc) return false;
 
-  img.src = img.dataset.src;
+  img.src = highResolutionSrc;
   finishImage(img);
   return true;
 }
@@ -148,17 +168,24 @@ function normalizeUrl(url: string) {
 function preload(
   source: HTMLSourceElement | HTMLImageElement,
   img: HTMLImageElement,
+  force = false,
 ) {
-  const dataSrc = source.dataset.src;
-  if (!dataSrc) return Promise.resolve(false);
+  const dataSrc =
+    source.dataset.src ??
+    (force &&
+    source instanceof HTMLSourceElement &&
+    !source.srcset.includes("-preview")
+      ? source.srcset
+      : undefined);
+  if (!dataSrc) return Promise.resolve<string | false>(false);
 
-  return new Promise<boolean>((resolve) => {
+  return new Promise<string | false>((resolve) => {
     const preloadedImage = new Image();
-    preloadedImage.onload = () => resolve(true);
+    preloadedImage.onload = () => resolve(preloadedImage.currentSrc || false);
     preloadedImage.onerror = () => resolve(false);
 
     if (source instanceof HTMLSourceElement) {
-      preloadedImage.sizes = source.sizes || img.sizes;
+      preloadedImage.sizes = force ? "89vw" : source.sizes || img.sizes;
       preloadedImage.srcset = dataSrc;
     } else {
       preloadedImage.src = dataSrc;
@@ -166,7 +193,11 @@ function preload(
   });
 }
 
-function promotePicture(picture: HTMLPictureElement, img: HTMLImageElement) {
+function promotePicture(
+  picture: HTMLPictureElement,
+  img: HTMLImageElement,
+  highResolutionSrc: string,
+) {
   for (const source of picture.querySelectorAll<HTMLSourceElement>(
     "source[data-src]",
   )) {
@@ -174,7 +205,7 @@ function promotePicture(picture: HTMLPictureElement, img: HTMLImageElement) {
     source.removeAttribute("data-src");
   }
 
-  if (img.dataset.src) img.src = img.dataset.src;
+  img.src = highResolutionSrc;
   finishImage(img);
 }
 

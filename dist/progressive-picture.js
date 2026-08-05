@@ -35,16 +35,16 @@ function observe() {
     };
 }
 function forceLoad(element) {
-    return loadProgressive(element).then(() => undefined);
+    return loadProgressive(element, true).then(() => undefined);
 }
-function loadProgressive(element) {
+function loadProgressive(element, force = false) {
     if (progressiveLoaded.has(element))
         return Promise.resolve(true);
     const activeLoad = progressiveLoading.get(element);
     if (activeLoad)
         return activeLoad;
     const load = (element instanceof HTMLPictureElement
-        ? loadPicture(element)
+        ? loadPicture(element, force)
         : loadImage(element))
         .then((loaded) => {
         if (loaded)
@@ -55,25 +55,41 @@ function loadProgressive(element) {
     progressiveLoading.set(element, load);
     return load;
 }
-async function loadPicture(picture) {
+async function loadPicture(picture, force = false) {
     const img = picture.querySelector("img");
     if (!img)
         return false;
-    const sources = Array.from(picture.querySelectorAll("source[data-src]"));
-    const hasCurrentSource = await waitForCurrentSource(img);
+    const sources = Array.from(picture.querySelectorAll(force ? "source" : "source[data-src]"));
+    const hasCurrentSource = force
+        ? Boolean(img.currentSrc)
+        : await waitForCurrentSource(img);
     const activeSource = hasCurrentSource
         ? sources.find((source) => sourceMatchesCurrentImage(source, img))
         : undefined;
-    const candidate = activeSource ?? (img.dataset.src ? img : undefined);
-    if (!candidate || !(await preload(candidate, img)))
-        return false;
-    promotePicture(picture, img);
-    return true;
+    const candidates = force
+        ? [
+            ...(activeSource ? [activeSource] : []),
+            ...sources.filter((source) => source !== activeSource),
+            ...(img.dataset.src ? [img] : []),
+        ]
+        : [
+            ...(activeSource ? [activeSource] : []),
+            ...(img.dataset.src ? [img] : []),
+        ];
+    for (const candidate of candidates) {
+        const highResolutionSrc = await preload(candidate, img, force);
+        if (!highResolutionSrc)
+            continue;
+        promotePicture(picture, img, highResolutionSrc);
+        return true;
+    }
+    return false;
 }
 async function loadImage(img) {
-    if (!img.dataset.src || !(await preload(img, img)))
+    const highResolutionSrc = img.dataset.src && (await preload(img, img));
+    if (!highResolutionSrc)
         return false;
-    img.src = img.dataset.src;
+    img.src = highResolutionSrc;
     finishImage(img);
     return true;
 }
@@ -110,16 +126,21 @@ function normalizeUrl(url) {
         return url;
     }
 }
-function preload(source, img) {
-    const dataSrc = source.dataset.src;
+function preload(source, img, force = false) {
+    const dataSrc = source.dataset.src ??
+        (force &&
+            source instanceof HTMLSourceElement &&
+            !source.srcset.includes("-preview")
+            ? source.srcset
+            : undefined);
     if (!dataSrc)
         return Promise.resolve(false);
     return new Promise((resolve) => {
         const preloadedImage = new Image();
-        preloadedImage.onload = () => resolve(true);
+        preloadedImage.onload = () => resolve(preloadedImage.currentSrc || false);
         preloadedImage.onerror = () => resolve(false);
         if (source instanceof HTMLSourceElement) {
-            preloadedImage.sizes = source.sizes || img.sizes;
+            preloadedImage.sizes = force ? "89vw" : source.sizes || img.sizes;
             preloadedImage.srcset = dataSrc;
         }
         else {
@@ -127,13 +148,12 @@ function preload(source, img) {
         }
     });
 }
-function promotePicture(picture, img) {
+function promotePicture(picture, img, highResolutionSrc) {
     for (const source of picture.querySelectorAll("source[data-src]")) {
         source.srcset = source.dataset.src ?? source.srcset;
         source.removeAttribute("data-src");
     }
-    if (img.dataset.src)
-        img.src = img.dataset.src;
+    img.src = highResolutionSrc;
     finishImage(img);
 }
 function finishImage(img) {

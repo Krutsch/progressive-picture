@@ -1,6 +1,6 @@
 {
   "name": "progressive-picture",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "description": "Native Lazy Loaded Picture Element with Progressive Image Change",
   "type": "module",
   "main": "./dist/progressive-picture.js",
@@ -45,10 +45,10 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@playwright/test": "^1.62.0",
-    "jsdom": "^30.0.0",
+    "@playwright/test": "^1.62.1",
+    "jsdom": "^30.0.1",
     "typescript": "^7.0.2",
-    "vite": "^8.1.5",
+    "vite": "^8.2.0",
     "vitest": "^4.1.10"
   },
   "repository": {

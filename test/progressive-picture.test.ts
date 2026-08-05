@@ -68,7 +68,7 @@ describe("forceLoad", () => {
     vi.unstubAllGlobals();
   });
 
-  it("preloads the active source and preserves every element's data-src", async () => {
+  it("promotes the active source and preserves each high-resolution URL", async () => {
     document.body.innerHTML = `
       <picture>
         <source srcset="/mobile/shared-preview.webp" data-src="/mobile/photo.webp">
@@ -86,7 +86,7 @@ describe("forceLoad", () => {
     expect(MockImage.requests).toEqual(["/desktop/photo.webp"]);
     expect(sources[0].getAttribute("srcset")).toBe("/mobile/photo.webp");
     expect(sources[1].getAttribute("srcset")).toBe("/desktop/photo.webp");
-    expect(img.getAttribute("src")).toBe("/fallback/photo.jpg");
+    expect(img.getAttribute("src")).toBe("/desktop/photo.webp");
     expect(picture.querySelectorAll("[data-src]")).toHaveLength(0);
     expect(img.alt).toBe("Photo");
     expect(img.classList.contains("img-progressive")).toBe(true);
@@ -108,6 +108,47 @@ describe("forceLoad", () => {
     await forceLoad(picture);
 
     expect(MockImage.requests).toEqual(["/small.webp 480w, /large.webp 960w"]);
+  });
+
+  it("promotes the selected source into a detached image", async () => {
+    document.body.innerHTML = `
+      <picture>
+        <source srcset="/preview.webp" data-src="/photo.webp">
+        <img src="/preview.webp">
+      </picture>
+    `;
+    const picture = document.querySelector("picture")!;
+    const clone = picture.cloneNode(true) as HTMLPictureElement;
+    const img = clone.querySelector("img")!;
+
+    await forceLoad(clone);
+
+    expect(img.getAttribute("src")).toBe("/photo.webp");
+    expect(img.classList.contains("img-progressive")).toBe(true);
+    expect(clone.querySelector("source")?.hasAttribute("data-src")).toBe(false);
+  });
+
+  it("force-loads a source that was already promoted", async () => {
+    document.body.innerHTML = `
+      <picture>
+        <source
+          srcset="/photo.webp 500w, /photo-2x.webp 1000w"
+          sizes="89vw"
+        >
+        <img src="/photo-2x.webp">
+      </picture>
+    `;
+    const picture = document.querySelector("picture")!;
+    const clone = picture.cloneNode(true) as HTMLPictureElement;
+    const img = clone.querySelector("img")!;
+
+    await forceLoad(clone);
+
+    expect(MockImage.requests).toEqual([
+      "/photo.webp 500w, /photo-2x.webp 1000w",
+    ]);
+    expect(img.getAttribute("src")).toBe("/photo.webp");
+    expect(img.classList.contains("img-progressive")).toBe(true);
   });
 
   it("leaves the preview intact when preloading fails", async () => {
