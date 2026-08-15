@@ -105,11 +105,13 @@ import { forceLoad } from "progressive-picture";
 
 const picture = document.querySelector("picture");
 if (picture) {
-  await forceLoad(picture);
+  await forceLoad(picture, { sizes: "89vw" });
 }
 ```
 
 `forceLoad()` accepts an `HTMLPictureElement` or `HTMLImageElement`. On preload failure, it leaves the preview intact.
+
+For a picture, `forceLoad()` uses the browser's active source and does not probe inactive sources. If the active source cannot load, it tries the fallback image. Pass `sizes` when the forced rendering width differs from the picture's current layout. This also reselects an already promoted responsive source for the new width.
 
 ### Further Optimization
 
