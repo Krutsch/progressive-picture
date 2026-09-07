@@ -95,6 +95,20 @@ describe("forceLoad", () => {
     expect(img.classList.contains("img-progressive")).toBe(true);
   });
 
+  it("reloads a retained image when its source changes", async () => {
+    document.body.innerHTML =
+      '<img src="/preview.jpg" data-src="/first.jpg">';
+    const image = document.querySelector("img")!;
+
+    await forceLoad(image);
+    image.dataset.src = "/second.jpg";
+    await forceLoad(image);
+
+    expect(MockImage.requests).toEqual(["/first.jpg", "/second.jpg"]);
+    expect(image.getAttribute("src")).toBe("/second.jpg");
+    expect(image.hasAttribute("data-src")).toBe(false);
+  });
+
   it("matches the selected candidate in a responsive srcset", async () => {
     document.body.innerHTML = `
       <picture>

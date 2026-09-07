@@ -1,7 +1,15 @@
 const progressiveLoaded = new WeakSet<HTMLPictureElement | HTMLImageElement>();
+const progressiveKeys = new WeakMap<
+  HTMLPictureElement | HTMLImageElement,
+  string
+>();
 const progressiveLoading = new WeakMap<
   HTMLPictureElement | HTMLImageElement,
   Promise<ProgressiveLoad | boolean>
+>();
+const progressiveLoadingKeys = new WeakMap<
+  HTMLPictureElement | HTMLImageElement,
+  string
 >();
 const progressiveGenerations = new WeakMap<
   HTMLPictureElement | HTMLImageElement,
@@ -93,10 +101,29 @@ function observe() {
       for (const node of entry.addedNodes) {
         visitPictures(node, observePicture);
       }
+
+      if (entry.type === "attributes") {
+        const picture = (entry.target as Element).closest("picture");
+        const loadingKey = picture && progressiveLoadingKeys.get(picture);
+        if (
+          picture &&
+          ((progressiveLoaded.has(picture) &&
+            progressiveKeys.get(picture) !== getElementKey(picture)) ||
+            (loadingKey !== undefined && loadingKey !== getElementKey(picture)))
+        ) {
+          invalidateElement(picture);
+          observePicture(picture);
+        }
+      }
     }
   });
 
-  mutationObserver.observe(document.body, { childList: true, subtree: true });
+  mutationObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["data-src", "src", "srcset"],
+    childList: true,
+    subtree: true,
+  });
 
   return () => {
     active = false;
@@ -123,10 +150,19 @@ function loadProgressive(
   element: HTMLImageElement | HTMLPictureElement,
   forceOptions?: ForceLoadOptions,
 ): Promise<ProgressiveLoad | true | false> {
-  if (progressiveLoaded.has(element)) return Promise.resolve(true);
+  const elementKey = getElementKey(element);
+  if (
+    progressiveLoaded.has(element) &&
+    progressiveKeys.get(element) === elementKey
+  ) {
+    return Promise.resolve(true);
+  }
 
   const activeLoad = progressiveLoading.get(element);
-  if (activeLoad) return activeLoad;
+  if (activeLoad && progressiveLoadingKeys.get(element) === elementKey) {
+    return activeLoad;
+  }
+  if (progressiveLoaded.has(element) || activeLoad) invalidateElement(element);
 
   const generation = currentGeneration(element);
   const load = (
@@ -137,17 +173,32 @@ function loadProgressive(
     .then((loaded) => {
       if (loaded === true && currentGeneration(element) === generation) {
         progressiveLoaded.add(element);
+        progressiveKeys.set(element, getElementKey(element));
       }
       return loaded;
     })
     .finally(() => {
       if (progressiveLoading.get(element) === load) {
         progressiveLoading.delete(element);
+        progressiveLoadingKeys.delete(element);
       }
     });
 
   progressiveLoading.set(element, load);
+  progressiveLoadingKeys.set(element, elementKey);
   return load;
+}
+
+function getElementKey(element: HTMLPictureElement | HTMLImageElement): string {
+  if (element instanceof HTMLPictureElement) {
+    const sources = Array.from(
+      element.querySelectorAll<HTMLSourceElement>("source"),
+      (source) => source.dataset.src ?? source.getAttribute("srcset") ?? "",
+    );
+    const image = element.querySelector("img");
+    return `${sources.join("\u0000")}\u0001${image?.dataset.src ?? image?.getAttribute("src") ?? ""}`;
+  }
+  return element.dataset.src ?? element.getAttribute("src") ?? "";
 }
 
 function currentGeneration(
@@ -160,6 +211,8 @@ function invalidateElement(element: HTMLPictureElement | HTMLImageElement) {
   progressiveGenerations.set(element, currentGeneration(element) + 1);
   progressiveLoaded.delete(element);
   progressiveLoading.delete(element);
+  progressiveLoadingKeys.delete(element);
+  progressiveKeys.delete(element);
 }
 
 type RemovalWatch = {
@@ -286,6 +339,7 @@ function completeLoad(loaded: ProgressiveLoad) {
   }
 
   progressiveLoaded.add(loaded.element);
+  progressiveKeys.set(loaded.element, getElementKey(loaded.element));
 }
 
 function waitForCurrentSource(img: HTMLImageElement): Promise<boolean> {
